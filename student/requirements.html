@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Requirements - PLSNHS</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/requirements.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- ===== SIDEBAR ===== -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <div class="logo-icon">P</div>
+                    <div class="logo-text">PLS<span>NHS</span></div>
+                </div>
+                <div class="school-badge">Placido L. Señor NHS</div>
+            </div>
+
+            <div class="student-profile">
+                <div class="student-avatar">
+                    <div class="avatar-initial" id="studentInitial">S</div>
+                    <div class="online-dot"></div>
+                </div>
+                <div class="student-name" id="studentName">Student</div>
+                <div class="student-role"><i class="fas fa-user-graduate"></i> Student</div>
+            </div>
+
+            <nav class="nav-menu">
+                <div class="nav-section">
+                    <div class="nav-section-title">MAIN MENU</div>
+                    <ul class="nav-items">
+                        <li><a href="dashboard.html"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+                        <li><a href="enrollment-form.html"><i class="fas fa-file-alt"></i> Enrollment</a></li>
+                        <li><a href="schedule.html"><i class="fas fa-calendar-alt"></i> Class Schedule</a></li>
+                        <li><a href="grades.html"><i class="fas fa-star"></i> My Grades</a></li>
+                        <li><a href="enrollment-history.html"><i class="fas fa-history"></i> Enrollment History</a></li>
+                        <li><a href="requirements.html" class="active"><i class="fas fa-file-alt"></i> Requirements</a></li>
+                    </ul>
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-section-title">ACCOUNT</div>
+                    <ul class="nav-items">
+                        <li><a href="profile.html"><i class="fas fa-user-circle"></i> My Profile</a></li>
+                        <li><a href="../auth/login.html" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                    </ul>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- ===== MAIN CONTENT ===== -->
+        <main class="main-content">
+            <!-- Page Header -->
+            <div class="page-header">
+                <div>
+                    <h1>Enrollment Requirements</h1>
+                    <p>Track and submit your requirements for enrollment</p>
+                </div>
+                <a href="dashboard.html" class="back-btn">
+                    <i class="fas fa-arrow-left"></i> Back to Dashboard
+                </a>
+            </div>
+
+            <!-- Status Alert -->
+            <div id="statusAlert" class="status-alert info">
+                <i class="fas fa-info-circle"></i>
+                <div id="statusMessage">
+                    <strong>Requirements Incomplete</strong><br>
+                    Please submit all required documents to complete your enrollment.
+                </div>
+            </div>
+
+            <!-- Alert Container -->
+            <div id="alertContainer"></div>
+
+            <!-- No Enrollment Card -->
+            <div id="noEnrollmentCard" class="no-enrollment-card" style="display: none;">
+                <i class="fas fa-file-alt"></i>
+                <h3>No Enrollment Found</h3>
+                <p>You don't have an active enrollment. Please enroll first to see your requirements.</p>
+                <a href="enrollment-form.html" class="btn-enroll">Enroll Now</a>
+            </div>
+
+            <!-- Requirements Content -->
+            <div id="requirementsContent" style="display: none;">
+                <!-- Enrollment Info Card -->
+                <div class="info-card">
+                    <div class="info-card-content">
+                        <div class="info-icon">
+                            <i class="fas fa-graduation-cap"></i>
+                        </div>
+                        <div class="info-details">
+                            <h3 id="gradeDisplay">Grade 7</h3>
+                            <p>School Year: <span id="schoolYearDisplay">2024-2025</span></p>
+                            <p>Student Type: 
+                                <span class="student-type-badge student-type-new" id="studentTypeDisplay">New Student</span>
+                            </p>
+                            <p>Enrollment Status: 
+                                <span class="status-badge status-pending_requirements" id="enrollmentStatusDisplay">Pending Requirements</span>
+                            </p>
+                            <p id="strandDisplay"></p>
+                        </div>
+                        <div class="info-status" id="enrollmentBadge"></div>
+                    </div>
+                </div>
+
+                <!-- Progress Section -->
+                <div class="progress-card">
+                    <div class="progress-header">
+                        <h3><i class="fas fa-chart-line"></i> Requirements Progress</h3>
+                        <span class="progress-percentage" id="progressPercentage">0% Complete</span>
+                    </div>
+                    <div class="progress-container">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progressFill" style="width: 0%;"></div>
+                        </div>
+                    </div>
+                    <div class="progress-stats">
+                        <div class="stat">
+                            <span class="stat-value" id="submittedCount">0</span>
+                            <span class="stat-label">Submitted</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-value" id="missingCount">0</span>
+                            <span class="stat-label">Pending</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-value" id="totalCount">0</span>
+                            <span class="stat-label">Total</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Requirements List -->
+                <div class="requirements-card">
+                    <h3><i class="fas fa-list-check"></i> Requirements List 
+                        <span class="student-type-label" id="requirementsTitle">(New Student)</span>
+                    </h3>
+                    <div class="requirements-list" id="requirementsList">
+                        <!-- Requirements will be rendered here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Instructions Card -->
+            <div class="instructions-card">
+                <h3><i class="fas fa-info-circle"></i> How to Submit Requirements</h3>
+                <div class="instructions-list">
+                    <div class="instruction-item">
+                        <div class="instruction-number">1</div>
+                        <div class="instruction-content">
+                            <h4>Prepare Your Documents</h4>
+                            <p>Make sure all required documents are clear and readable (PDF, JPG, or PNG format).</p>
+                        </div>
+                    </div>
+                    <div class="instruction-item">
+                        <div class="instruction-number">2</div>
+                        <div class="instruction-content">
+                            <h4>Click Upload Button</h4>
+                            <p>Click the "Upload" button next to the requirement you want to submit.</p>
+                        </div>
+                    </div>
+                    <div class="instruction-item">
+                        <div class="instruction-number">3</div>
+                        <div class="instruction-content">
+                            <h4>Select File</h4>
+                            <p>Choose the file from your computer and click "Submit".</p>
+                        </div>
+                    </div>
+                    <div class="instruction-item">
+                        <div class="instruction-number">4</div>
+                        <div class="instruction-content">
+                            <h4>Wait for Verification</h4>
+                            <p>After all requirements are submitted, your enrollment will be reviewed by the registrar within 3-5 business days.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contact Card -->
+            <div class="contact-card">
+                <i class="fas fa-headset"></i>
+                <div class="contact-info">
+                    <h4>Need Help?</h4>
+                    <p>Contact the Registrar's Office for assistance with your requirements.</p>
+                    <div class="contact-details">
+                        <span><i class="fas fa-phone"></i> (032) 123-4567</span>
+                        <span><i class="fas fa-envelope"></i> registrar@plsnhs.edu.ph</span>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Upload Modal -->
+    <div id="uploadModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-upload"></i> Upload Requirement</h3>
+                <button class="close-modal" onclick="window.closeUploadModal()">&times;</button>
+            </div>
+            <form id="uploadForm">
+                <input type="hidden" name="requirement_key" id="requirement_key">
+                <div class="modal-body">
+                    <div class="upload-info">
+                        <p>Uploading: <strong id="requirement_label"></strong></p>
+                        <div class="file-info">
+                            <i class="fas fa-info-circle"></i> Allowed formats: <span id="allowed_types"></span><br>
+                            <i class="fas fa-weight-hanging"></i> Max size: <span id="max_size"></span>MB
+                        </div>
+                    </div>
+                    <div class="file-input-wrapper">
+                        <input type="file" name="requirement_file" id="requirement_file" accept=".pdf,.jpg,.jpeg,.png,.gif,.webp" required>
+                        <label for="requirement_file" class="file-input-label">
+                            <i class="fas fa-folder-open"></i> Choose File
+                        </label>
+                        <div class="selected-file" id="selectedFile"></div>
+                    </div>
+                    <div id="uploadProgress" class="upload-progress" style="display: none;">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="uploadProgressFill"></div>
+                        </div>
+                        <p class="progress-text">Uploading...</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary" onclick="window.closeUploadModal()">Cancel</button>
+                    <button type="submit" name="upload_requirement" class="btn-primary" id="submitUpload">Upload</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script type="module" src="js/requirements.js"></script>
+</body>
+</html>

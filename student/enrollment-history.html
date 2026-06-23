@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enrollment History - PLSNHS</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/enrollment-history.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- ===== SIDEBAR ===== -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <div class="logo-icon">P</div>
+                    <div class="logo-text">PLS<span>NHS</span></div>
+                </div>
+                <div class="school-badge">Placido L. Señor NHS</div>
+            </div>
+
+            <div class="student-profile">
+                <div class="student-avatar">
+                    <div class="avatar-initial" id="studentInitial">S</div>
+                    <div class="online-dot"></div>
+                </div>
+                <div class="student-name" id="studentName">Student</div>
+                <div class="student-role"><i class="fas fa-user-graduate"></i> Student</div>
+            </div>
+
+            <nav class="nav-menu">
+                <div class="nav-section">
+                    <div class="nav-section-title">MAIN MENU</div>
+                    <ul class="nav-items">
+                        <li><a href="dashboard.html"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+                        <li><a href="enrollment-form.html"><i class="fas fa-file-alt"></i> Enrollment</a></li>
+                        <li><a href="schedule.html"><i class="fas fa-calendar-alt"></i> Class Schedule</a></li>
+                        <li><a href="grade.html"><i class="fas fa-star"></i> My Grades</a></li>
+                        <li><a href="enrollment-history.html" class="active"><i class="fas fa-history"></i> Enrollment History</a></li>
+                    </ul>
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-section-title">ACCOUNT</div>
+                    <ul class="nav-items">
+                        <li><a href="profile.html"><i class="fas fa-user-circle"></i> My Profile</a></li>
+                        <li><a href="../auth/login.html" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                    </ul>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- ===== MAIN CONTENT ===== -->
+        <main class="main-content">
+            <!-- Page Header -->
+            <div class="page-header">
+                <div>
+                    <h1><i class="fas fa-history"></i> Enrollment History</h1>
+                </div>
+                <a href="dashboard.html" class="back-btn" id="backBtn">
+                    <i class="fas fa-arrow-left"></i> Back to Dashboard
+                </a>
+            </div>
+
+            <!-- Alert Messages -->
+            <div id="alertContainer"></div>
+
+            <!-- Current Enrollment Banner -->
+            <div id="currentBanner" class="current-enrollment-banner" style="display: none;">
+                <div class="current-enrollment-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="current-enrollment-content">
+                    <h3>
+                        Currently Enrolled
+                        <span id="studentTypeBadge" class="new-student-badge">New Student</span>
+                    </h3>
+                    <p>
+                        <strong>Grade <span id="currentGrade">N/A</span></strong>
+                        <span id="currentSection"></span>
+                        <span id="currentStrand"></span>
+                    </p>
+                    <p class="current-enrollment-date">
+                        <i class="fas fa-calendar-alt"></i> School Year: <span id="currentSchoolYear">N/A</span>
+                    </p>
+                </div>
+                <div class="current-enrollment-badge">
+                    <i class="fas fa-graduation-cap"></i> Active
+                </div>
+            </div>
+
+            <!-- No Enrollment Banner -->
+            <div id="noEnrollmentBanner" class="no-enrollment-banner" style="display: none;">
+                <div class="current-enrollment-icon">
+                    <i class="fas fa-user-graduate"></i>
+                </div>
+                <div class="current-enrollment-content">
+                    <h3>
+                        Not Currently Enrolled
+                        <span id="studentTypeBadge2" class="new-student-badge">New Student</span>
+                    </h3>
+                    <p>You are not currently enrolled for this school year.</p>
+                    <p class="current-enrollment-date">
+                        <i class="fas fa-info-circle"></i> Please complete your enrollment to start your journey with us.
+                    </p>
+                </div>
+                <a href="enrollment-form.html" class="enroll-now-btn">
+                    <i class="fas fa-graduation-cap"></i> Enroll Now
+                </a>
+            </div>
+
+            <!-- Stats Summary -->
+            <div class="stats-summary">
+                <div class="stat-summary-card">
+                    <div class="number" id="totalEnrollments">0</div>
+                    <div class="label">Total Enrollments</div>
+                </div>
+                <div class="stat-summary-card">
+                    <div class="number" id="enrolledCount">0</div>
+                    <div class="label">Approved</div>
+                </div>
+                <div class="stat-summary-card">
+                    <div class="number" id="pendingCount">0</div>
+                    <div class="label">Pending</div>
+                </div>
+                <div class="stat-summary-card">
+                    <div class="number" id="uniqueYears">0</div>
+                    <div class="label">School Years</div>
+                </div>
+            </div>
+
+            <!-- History List -->
+            <div class="history-card">
+                <div class="history-card-header">
+                    <h3><i class="fas fa-list"></i> Enrollment Records</h3>
+                    <span class="history-count" id="historyCount">0 record(s)</span>
+                </div>
+                <div id="historyList"></div>
+            </div>
+
+            <!-- Legend Guide -->
+            <div class="legend-guide">
+                <h4><i class="fas fa-info-circle"></i> Status Guide</h4>
+                <div class="legend-items">
+                    <div class="legend-item">
+                        <span class="legend-dot enrolled"></span>
+                        <span>Enrolled/Approved - Your enrollment has been approved and you are officially enrolled.</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-dot pending"></span>
+                        <span>Pending - Your enrollment is waiting for approval from the registrar.</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-dot rejected"></span>
+                        <span>Rejected - Your enrollment was not approved. Please contact the registrar.</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-dot current"></span>
+                        <span>Current Enrollment - This is your active enrollment for the current school year.</span>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- JavaScript -->
+    <script type="module" src="js/enrollment-history.js"></script>
+</body>
+</html>
