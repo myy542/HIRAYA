@@ -78,7 +78,7 @@ import {
         } else {
             console.log('❌ User logged out - redirecting to login');
             // REDIRECT SA AUTH/LOGIN.HTML
-            window.location.href = '../auth/login.html';
+            window.location.href = '../auth/homepage.html';
         }
     });
 
@@ -91,7 +91,7 @@ import {
             e.preventDefault();
             signOut(auth).then(() => {
                 // REDIRECT SA AUTH/LOGIN.HTML AFTER LOGOUT
-                window.location.href = '../auth/login.html';
+                window.location.href = '../auth/homepage.html';
             }).catch((error) => {
                 console.error('Logout error:', error);
             });

@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Students Management - PLSNHS</title>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- CSS Files -->
+    <link rel="stylesheet" href="../admin/css/base.css">
+    <link rel="stylesheet" href="../admin/css/students.css">
+</head>
+<body>
+    <!-- Mobile Menu Toggle -->
+    <div class="menu-toggle" id="menuToggle">
+        <i class="fas fa-bars"></i>
+    </div>
+
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <div class="logo-icon">
+                        <img src="../pictures/logo sa skwelahan.jpg" alt="School Logo" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ccircle cx=%2250%22 cy=%2250%22 r=%2245%22 fill=%22%231B2A4A%22 /%3E%3Ctext x=%2250%22 y=%2265%22 text-anchor=%22middle%22 fill=%22white%22 font-size=%2230%22 font-weight=%22bold%22%3EPLS%3C/text%3E%3C/svg%3E'">
+                    </div>
+                    <div class="logo-text">PLS<span>NHS</span></div>
+                </div>
+                <div class="school-badge">Placido L. Señor NHS</div>
+            </div>
+
+            <div class="admin-profile">
+                <div class="admin-avatar">
+                    <div class="avatar-initial">A</div>
+                    <div class="online-dot"></div>
+                </div>
+                <div class="admin-name">Admin</div>
+                <div class="admin-role"><i class="fas fa-shield-alt"></i> Administrator</div>
+            </div>
+
+            <div class="nav-menu">
+                <div class="nav-section">
+                    <div class="nav-section-title">MAIN MENU</div>
+                    <ul class="nav-items">
+                        <li><a href="dashboard.html"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+                        <li><a href="students.html" class="active"><i class="fas fa-user-graduate"></i> Students</a></li>
+                        <li><a href="teachers.html"><i class="fas fa-chalkboard-user"></i> Teachers</a></li>
+                        <li><a href="sections.html"><i class="fas fa-layer-group"></i> Sections</a></li>
+                        <li><a href="subjects.html"><i class="fas fa-book"></i> Subjects</a></li>
+                        <li><a href="enrollments.html"><i class="fas fa-file-signature"></i> Enrollments</a></li>
+                    </ul>
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-section-title">MANAGEMENT</div>
+                    <ul class="nav-items">
+                        <li><a href="manage_accounts.html"><i class="fas fa-users-cog"></i> Accounts</a></li>
+                    </ul>
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-section-title">ACCOUNT</div>
+                    <ul class="nav-items">
+                        <li><a href="profile.html"><i class="fas fa-user"></i> Profile</a></li>
+                        <li><a href="../auth/logout.html"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                    </ul>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="page-header">
+                <div>
+                    <h1>Students Management</h1>
+                    <p class="subtitle">Manage student accounts and enrollment records</p>
+                </div>
+            </div>
+
+            <!-- Alert Container -->
+            <div id="alertContainer"></div>
+
+            <!-- Stats Grid -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <h3>Total Students</h3>
+                        <div class="stat-icon"><i class="fas fa-user-graduate"></i></div>
+                    </div>
+                    <div class="stat-number" id="totalStudents">0</div>
+                    <div class="stat-label">All registered students</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <h3>New Enrollees</h3>
+                        <div class="stat-icon"><i class="fas fa-star-of-life"></i></div>
+                    </div>
+                    <div class="stat-number" id="newStudents">0</div>
+                    <div class="stat-label">First-time enrollees</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <h3>Old Enrollees</h3>
+                        <div class="stat-icon"><i class="fas fa-history"></i></div>
+                    </div>
+                    <div class="stat-number" id="oldStudents">0</div>
+                    <div class="stat-label">Returning students</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <h3>Not Enrolled</h3>
+                        <div class="stat-icon"><i class="fas fa-user-slash"></i></div>
+                    </div>
+                    <div class="stat-number" id="notEnrolled">0</div>
+                    <div class="stat-label">No enrollment record</div>
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <div class="tabs" id="tabsContainer">
+                <a href="#" class="tab-btn active" data-type="all"><i class="fas fa-users"></i> All Students</a>
+                <a href="#" class="tab-btn" data-type="new"><i class="fas fa-star-of-life"></i> New Enrollees</a>
+                <a href="#" class="tab-btn" data-type="old"><i class="fas fa-history"></i> Old Enrollees</a>
+                <a href="#" class="tab-btn" data-type="not_enrolled"><i class="fas fa-user-slash"></i> Not Enrolled</a>
+            </div>
+
+            <!-- Filters -->
+            <div class="actions-bar">
+                <form id="filterForm" class="filter-form">
+                    <input type="hidden" name="type" id="enrolleeType" value="all">
+                    <div class="filter-group">
+                        <select name="grade" id="gradeFilter" class="filter-select">
+                            <option value="">All Grades</option>
+                            <option value="7">Grade 7</option>
+                            <option value="8">Grade 8</option>
+                            <option value="9">Grade 9</option>
+                            <option value="10">Grade 10</option>
+                            <option value="11">Grade 11</option>
+                            <option value="12">Grade 12</option>
+                        </select>
+                        <select name="status" id="statusFilter" class="filter-select">
+                            <option value="">All Status</option>
+                            <option value="Enrolled">Enrolled</option>
+                            <option value="Pending">Pending</option>
+                            <option value="Rejected">Rejected</option>
+                        </select>
+                        <button type="submit" class="btn-filter"><i class="fas fa-filter"></i> Apply</button>
+                        <button type="reset" class="btn-reset" onclick="resetFilters()"><i class="fas fa-redo-alt"></i> Reset</button>
+                    </div>
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" name="search" id="searchInput" placeholder="Search by name, email or ID...">
+                        <button type="submit" class="btn-search">Search</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Table -->
+            <div class="table-card">
+                <div class="table-header">
+                    <h3><i class="fas fa-user-graduate"></i> Student List</h3>
+                    <span class="badge-count" id="recordCount">Total: 0 students</span>
+                </div>
+                <div class="table-container">
+                    <table class="data-table" id="studentsTable">
+                        <thead>
+                            <tr>
+                                <th>Student</th>
+                                <th>ID Number</th>
+                                <th>Type</th>
+                                <th>Grade & Strand</th>
+                                <th>Status</th>
+                                <th>Enrolled Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody">
+                            <!-- Loaded by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="../admin/js/students.js"></script>
+</body>
+</html>
