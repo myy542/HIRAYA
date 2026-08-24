@@ -106,40 +106,51 @@ import {
     // LOAD STUDENT DATA
     // ============================================
 
+    // ============================================
+    // LOAD STUDENT DATA
+    // ============================================
+
     async function loadStudentData(userId) {
         try {
             // Get student profile
             const userDoc = await getDoc(doc(db, 'users', userId));
             if (!userDoc.exists()) {
-                showAlert('❌ User profile not found', 'error');
-                return;
+                console.log('User profile doc not found, using auth profile');
             }
 
-            // Get current enrollment (approved/enrolled)
+            // Get current enrollment (approved/enrolled or pending)
             const enrollmentsRef = collection(db, 'enrollments');
-            const q = query(
-                enrollmentsRef, 
-                where('userId', '==', userId), 
-                where('status', 'in', ['Enrolled', 'Approved']),
-                orderBy('createdAt', 'desc'),
-                limit(1)
-            );
+            const q = query(enrollmentsRef, where('userId', '==', userId));
             const snapshot = await getDocs(q);
 
-            if (!snapshot.empty) {
-                const doc = snapshot.docs[0];
-                currentEnrollment = { id: doc.id, ...doc.data() };
+            let enrollments = [];
+            snapshot.forEach((d) => {
+                enrollments.push({ id: d.id, ...d.data() });
+            });
+
+            // Sort in memory by createdAt descending
+            enrollments.sort((a, b) => {
+                const timeA = a.createdAt?.toDate ? a.createdAt.toDate().getTime() : (a.createdAt?.seconds ? a.createdAt.seconds * 1000 : (new Date(a.createdAt || 0).getTime() || 0));
+                const timeB = b.createdAt?.toDate ? b.createdAt.toDate().getTime() : (b.createdAt?.seconds ? b.createdAt.seconds * 1000 : (new Date(b.createdAt || 0).getTime() || 0));
+                return timeB - timeA;
+            });
+
+            if (enrollments.length > 0) {
+                currentEnrollment = enrollments[0];
                 renderEnrollmentInfo(currentEnrollment);
                 
                 // Load subjects and grades
                 await loadSubjectsAndGrades(userId, currentEnrollment);
             } else {
                 // No enrollment found
-                notEnrolledCard.style.display = 'block';
-                noGradesMsg.style.display = 'none';
-                document.querySelector('.class-info-card').style.display = 'none';
-                document.querySelector('.stats-container').style.display = 'none';
-                document.querySelector('.subjects-card').style.display = 'none';
+                if (notEnrolledCard) notEnrolledCard.style.display = 'block';
+                if (noGradesMsg) noGradesMsg.style.display = 'none';
+                const classCard = document.querySelector('.class-info-card');
+                if (classCard) classCard.style.display = 'none';
+                const statsCont = document.querySelector('.stats-container');
+                if (statsCont) statsCont.style.display = 'none';
+                const subCard = document.querySelector('.subjects-card');
+                if (subCard) subCard.style.display = 'none';
             }
 
         } catch (error) {
@@ -153,17 +164,20 @@ import {
     // ============================================
 
     function renderEnrollmentInfo(enrollment) {
-        document.querySelector('.class-info-card').style.display = 'flex';
-        document.querySelector('.stats-container').style.display = 'grid';
-        document.querySelector('.subjects-card').style.display = 'block';
-        notEnrolledCard.style.display = 'none';
+        const classCard = document.querySelector('.class-info-card');
+        if (classCard) classCard.style.display = 'flex';
+        const statsCont = document.querySelector('.stats-container');
+        if (statsCont) statsCont.style.display = 'grid';
+        const subCard = document.querySelector('.subjects-card');
+        if (subCard) subCard.style.display = 'block';
+        if (notEnrolledCard) notEnrolledCard.style.display = 'none';
 
-        gradeDisplay.textContent = enrollment.grade || 'N/A';
-        strandDisplay.textContent = enrollment.strand || 'N/A';
-        statusDisplay.textContent = enrollment.status || 'Enrolled';
-        schoolYearDisplay.textContent = enrollment.schoolYear || 'N/A';
-        gradeLevelDisplay.textContent = enrollment.grade || 'N/A';
-        schoolYearStat.textContent = enrollment.schoolYear || 'N/A';
+        if (gradeDisplay) gradeDisplay.textContent = enrollment.grade || 'N/A';
+        if (strandDisplay) strandDisplay.textContent = enrollment.strand || 'N/A';
+        if (statusDisplay) statusDisplay.textContent = enrollment.status || 'Enrolled';
+        if (schoolYearDisplay) schoolYearDisplay.textContent = enrollment.schoolYear || 'N/A';
+        if (gradeLevelDisplay) gradeLevelDisplay.textContent = enrollment.grade || 'N/A';
+        if (schoolYearStat) schoolYearStat.textContent = enrollment.schoolYear || 'N/A';
     }
 
     // ============================================
@@ -172,44 +186,86 @@ import {
 
     async function loadSubjectsAndGrades(userId, enrollment) {
         try {
-            // Get subjects for this grade level
-            const subjectsRef = collection(db, 'subjects');
-            const q = query(subjectsRef, where('gradeId', '==', enrollment.gradeId || enrollment.grade));
-            const snapshot = await getDocs(q);
-            
             subjectsList = [];
-            snapshot.forEach((doc) => {
-                subjectsList.push({ id: doc.id, ...doc.data() });
-            });
+            const gradeName = enrollment.grade || 'Grade 7';
+
+            // Get subjects from Firestore if any
+            try {
+                const subjectsRef = collection(db, 'subjects');
+                const q = query(subjectsRef);
+                const snapshot = await getDocs(q);
+                
+                snapshot.forEach((doc) => {
+                    const data = doc.data();
+                    if (data.gradeId == enrollment.gradeId || data.grade_name == gradeName || data.gradeLevel == gradeName || data.grade == gradeName) {
+                        subjectsList.push({ id: doc.id, ...data });
+                    }
+                });
+            } catch (e) {
+                console.log('Subjects fetch error, using default curriculum:', e);
+            }
+
+            // If no subjects found in Firestore, use default standard curriculum
+            if (subjectsList.length === 0) {
+                const isSHS = gradeName === 'Grade 11' || gradeName === 'Grade 12';
+                const defaultSubjects = isSHS ? [
+                    'General Mathematics',
+                    'Oral Communication',
+                    'Komunikasyon at Pananaliksik',
+                    '21st Century Literature',
+                    'Earth and Life Science',
+                    'Understanding Culture, Society and Politics',
+                    'Physical Education and Health'
+                ] : [
+                    'Mathematics',
+                    'Science',
+                    'English',
+                    'Filipino',
+                    'Araling Panlipunan (AP)',
+                    'MAPEH',
+                    'Edukasyon sa Pagpapakatao (EsP)',
+                    'Technology and Livelihood Education (TLE)'
+                ];
+
+                subjectsList = defaultSubjects.map((name, idx) => ({
+                    id: 'sub_' + (idx + 1),
+                    subjectName: name,
+                    name: name
+                }));
+            }
 
             // Get grades for this student
-            const gradesRef = collection(db, 'grades');
-            const gq = query(gradesRef, where('userId', '==', userId));
-            const gradesSnapshot = await getDocs(gq);
-            
             gradesData = {};
-            gradesSnapshot.forEach((doc) => {
-                const data = doc.data();
-                const subjectId = data.subjectId;
-                if (!gradesData[subjectId]) {
-                    gradesData[subjectId] = {};
-                }
-                gradesData[subjectId][data.quarter] = data.grade;
-            });
+            try {
+                const gradesRef = collection(db, 'grades');
+                const gq = query(gradesRef, where('userId', '==', userId));
+                const gradesSnapshot = await getDocs(gq);
+                
+                gradesSnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    const subjectId = data.subjectId;
+                    if (!gradesData[subjectId]) {
+                        gradesData[subjectId] = {};
+                    }
+                    gradesData[subjectId][data.quarter] = data.grade;
+                });
+            } catch (e) {
+                console.log('Grades fetch error:', e);
+            }
 
             // Render subjects
             renderSubjects();
 
             // Show no grades message if no grades exist
             const hasGrades = Object.keys(gradesData).length > 0;
-            if (!hasGrades) {
-                noGradesMsg.style.display = 'block';
-            } else {
-                noGradesMsg.style.display = 'none';
+            if (noGradesMsg) {
+                noGradesMsg.style.display = hasGrades ? 'none' : 'block';
             }
 
             // Update subject count
-            subjectsCount.textContent = subjectsList.length;
+            if (subjectsCount) {
+                subjectsCount.textContent = subjectsList.length;
+            }
 
         } catch (error) {
             console.error('Error loading subjects:', error);

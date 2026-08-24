@@ -73,12 +73,22 @@ body {
     flex-shrink: 0;
 }
 
-.brand-icon {
+/* ===== BRAND LOGO ===== */
+.brand-logo {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #0a015c;
+    display: flex;
+}
+
+.brand-icon-fallback {
+    display: none;
     background: #0a015c;
     color: white;
     width: 40px;
     height: 40px;
-    display: flex;
     align-items: center;
     justify-content: center;
     border-radius: 12px;
@@ -671,6 +681,11 @@ body {
         justify-content: center;
     }
 
+    .brand-logo {
+        width: 35px;
+        height: 35px;
+    }
+
     .hero-title {
         font-size: 2.5rem;
     }
@@ -815,5 +830,14 @@ body {
     .btn-outline-sm {
         padding: 0.4rem 1.2rem !important;
         font-size: 0.75rem !important;
+    }
+
+    .brand-logo {
+        width: 30px;
+        height: 30px;
+    }
+
+    .brand-name {
+        font-size: 1.2rem;
     }
 }

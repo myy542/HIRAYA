@@ -316,9 +316,9 @@ import {
             showAlert('✅ Registration successful! A verification code has been sent to your email.', 'success');
             showToast('📧 Please check your email to verify your account', 'success');
 
-            // Redirect to verify email page after 2 seconds
+            // Redirect to login page after 2.5 seconds
             setTimeout(() => {
-                window.location.href = 'verify-email.html';
+                window.location.href = 'login.html';
             }, 2500);
 
         } catch (error) {

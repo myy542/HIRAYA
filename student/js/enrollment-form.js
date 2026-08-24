@@ -215,18 +215,38 @@ import {
     async function loadExistingEnrollment(userId) {
         try {
             const enrollmentsRef = collection(db, 'enrollments');
-            const q = query(enrollmentsRef, where('userId', '==', userId), orderBy('createdAt', 'desc'), limit(1));
+            const q = query(enrollmentsRef, where('userId', '==', userId));
             const snapshot = await getDocs(q);
             
             if (!snapshot.empty) {
-                const doc = snapshot.docs[0];
-                const data = doc.data();
+                let enrollments = [];
+                snapshot.forEach(d => enrollments.push({ id: d.id, ...d.data() }));
+                
+                // Sort in memory
+                enrollments.sort((a, b) => {
+                    const timeA = a.createdAt?.toDate ? a.createdAt.toDate().getTime() : (a.createdAt?.seconds ? a.createdAt.seconds * 1000 : (new Date(a.createdAt || 0).getTime() || 0));
+                    const timeB = b.createdAt?.toDate ? b.createdAt.toDate().getTime() : (b.createdAt?.seconds ? b.createdAt.seconds * 1000 : (new Date(b.createdAt || 0).getTime() || 0));
+                    return timeB - timeA;
+                });
+
+                const data = enrollments[0];
                 
                 // Show existing enrollment card
                 if (existingEnrollmentDiv) {
                     existingEnrollmentDiv.style.display = 'block';
                     enrollmentForm.style.display = 'none';
                     
+                    let dateStr = 'N/A';
+                    if (data.createdAt) {
+                        if (data.createdAt.toDate) {
+                            dateStr = data.createdAt.toDate().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+                        } else if (data.createdAt.seconds) {
+                            dateStr = new Date(data.createdAt.seconds * 1000).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+                        } else {
+                            dateStr = new Date(data.createdAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+                        }
+                    }
+
                     enrollmentDisplay.innerHTML = `
                         <div class="enrollment-badge status-${(data.status || 'pending').toLowerCase()}">
                             Status: ${data.status || 'Pending'}
@@ -235,7 +255,7 @@ import {
                             <p><strong>Grade Level:</strong> ${data.grade || 'N/A'}</p>
                             ${data.strand ? `<p><strong>Strand:</strong> ${data.strand}</p>` : ''}
                             <p><strong>School Year:</strong> ${data.schoolYear || 'N/A'}</p>
-                            <p><strong>Date Submitted:</strong> ${data.createdAt ? new Date(data.createdAt.seconds * 1000).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'N/A'}</p>
+                            <p><strong>Date Submitted:</strong> ${dateStr}</p>
                         </div>
                     `;
                 }

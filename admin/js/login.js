@@ -61,10 +61,12 @@ import {
                     
                     // Redirect based on role
                     const paths = {
-                        'Admin': '../admin/dashboard.html',
-                        'Registrar': '../admin/dashboard.html',
+                        'Admin': '../logs/dashboard.html',
+                        'Registrar': '../registrar/dashboard.html',
                         'Teacher': '../teacher/dashboard.html',
-                        'Student': '../student/dashboard.html'
+                        'Student': '../student/dashboard.html',
+                        'Parent': '../parents/dashboard.html',
+                        'Parents': '../parents/dashboard.html'
                     };
                     const path = paths[role] || '../student/dashboard.html';
                     window.location.href = path;
@@ -203,10 +205,12 @@ import {
 
             // Redirect based on role
             const paths = {
-                'Admin': '../admin/dashboard.html',
-                'Registrar': '../admin/dashboard.html',
+                'Admin': '../logs/dashboard.html',
+                'Registrar': '../registrar/dashboard.html',
                 'Teacher': '../teacher/dashboard.html',
-                'Student': '../student/dashboard.html'
+                'Student': '../student/dashboard.html',
+                'Parent': '../parents/dashboard.html',
+                'Parents': '../parents/dashboard.html'
             };
             const path = paths[role] || '../student/dashboard.html';
 

@@ -114,25 +114,31 @@ import {
 
     async function loadScheduleData(userId) {
         try {
-            // Get current enrollment
+            // Get current enrollment without requiring composite index
             const enrollmentsRef = collection(db, 'enrollments');
-            const q = query(
-                enrollmentsRef, 
-                where('userId', '==', userId), 
-                where('status', 'in', ['Enrolled', 'Approved']),
-                orderBy('createdAt', 'desc'),
-                limit(1)
-            );
+            const q = query(enrollmentsRef, where('userId', '==', userId));
             const snapshot = await getDocs(q);
             
             if (snapshot.empty) {
                 showAlert('⚠️ No enrollment found. Please enroll first.', 'error');
-                document.querySelector('.schedule-container').style.display = 'none';
+                const schedCont = document.querySelector('.schedule-container');
+                if (schedCont) schedCont.style.display = 'none';
                 return;
             }
 
-            const doc = snapshot.docs[0];
-            currentEnrollment = { id: doc.id, ...doc.data() };
+            let enrollments = [];
+            snapshot.forEach((d) => {
+                enrollments.push({ id: d.id, ...d.data() });
+            });
+
+            // Sort in memory by createdAt descending
+            enrollments.sort((a, b) => {
+                const timeA = a.createdAt?.toDate ? a.createdAt.toDate().getTime() : (a.createdAt?.seconds ? a.createdAt.seconds * 1000 : (new Date(a.createdAt || 0).getTime() || 0));
+                const timeB = b.createdAt?.toDate ? b.createdAt.toDate().getTime() : (b.createdAt?.seconds ? b.createdAt.seconds * 1000 : (new Date(b.createdAt || 0).getTime() || 0));
+                return timeB - timeA;
+            });
+
+            currentEnrollment = enrollments[0];
             console.log('📚 Enrollment data loaded:', currentEnrollment);
 
             // Load time slots
@@ -142,11 +148,8 @@ import {
             if (currentEnrollment.sectionId) {
                 await loadSchedules(currentEnrollment.sectionId);
             } else {
-                showAlert('⚠️ No section assigned yet.', 'warning');
+                organizeSchedules();
             }
-
-            // Update UI
-            updateUI();
 
         } catch (error) {
             console.error('Error loading schedule data:', error);
@@ -271,15 +274,17 @@ import {
         const freePeriodsCount = totalTimeSlots - totalClassesCount;
 
         // Update stats
-        totalClasses.textContent = totalClassesCount;
-        totalSubjects.textContent = Object.keys(uniqueSubjects).length;
-        totalTeachers.textContent = Object.keys(uniqueTeachers).length;
-        freePeriods.textContent = freePeriodsCount;
+        if (totalClasses) totalClasses.textContent = totalClassesCount;
+        const headerTotal = document.getElementById('headerTotalClasses');
+        if (headerTotal) headerTotal.textContent = totalClassesCount;
+        if (totalSubjects) totalSubjects.textContent = Object.keys(uniqueSubjects).length;
+        if (totalTeachers) totalTeachers.textContent = Object.keys(uniqueTeachers).length;
+        if (freePeriods) freePeriods.textContent = freePeriodsCount;
 
         // Update section info
-        sectionName.textContent = currentEnrollment.section || 'Not Assigned';
-        gradeDisplay.textContent = currentEnrollment.grade || 'N/A';
-        schoolYearDisplay.textContent = currentEnrollment.schoolYear || 'N/A';
+        if (sectionName) sectionName.textContent = currentEnrollment.section || 'Not Assigned';
+        if (gradeDisplay) gradeDisplay.textContent = currentEnrollment.grade || 'N/A';
+        if (schoolYearDisplay) schoolYearDisplay.textContent = currentEnrollment.schoolYear || 'N/A';
 
         // Update today's classes
         updateTodayClasses();
@@ -395,6 +400,9 @@ import {
     function updateSummary() {
         // Subjects
         const subjectsArray = Object.values(uniqueSubjects);
+        const subjectBadge = document.getElementById('subjectCountBadge');
+        if (subjectBadge) subjectBadge.textContent = subjectsArray.length;
+
         if (subjectsList) {
             if (subjectsArray.length === 0) {
                 subjectsList.innerHTML = `<div class="no-data-message"><i class="fas fa-info-circle"></i> No subjects assigned</div>`;
@@ -410,6 +418,9 @@ import {
 
         // Teachers
         const teachersArray = Object.values(uniqueTeachers);
+        const teacherBadge = document.getElementById('teacherCountBadge');
+        if (teacherBadge) teacherBadge.textContent = teachersArray.length;
+
         if (teachersList) {
             if (teachersArray.length === 0) {
                 teachersList.innerHTML = `<div class="no-data-message"><i class="fas fa-info-circle"></i> No teachers assigned</div>`;
@@ -425,18 +436,19 @@ import {
 
         // Section info
         if (sectionInfo) {
+            const classCount = totalClasses ? totalClasses.textContent : '0';
             sectionInfo.innerHTML = `
                 <div class="info-row">
                     <i class="fas fa-layer-group"></i>
-                    <strong>Grade Level:</strong> ${currentEnrollment.grade || 'N/A'}
+                    <strong>Grade Level:</strong> ${currentEnrollment?.grade || 'N/A'}
                 </div>
                 <div class="info-row">
                     <i class="fas fa-calendar-alt"></i>
-                    <strong>School Year:</strong> ${currentEnrollment.schoolYear || 'N/A'}
+                    <strong>School Year:</strong> ${currentEnrollment?.schoolYear || 'N/A'}
                 </div>
                 <div class="info-row">
                     <i class="fas fa-clock"></i>
-                    <strong>Total Classes:</strong> ${totalClasses.textContent} per week
+                    <strong>Total Classes:</strong> ${classCount} per week
                 </div>
             `;
         }

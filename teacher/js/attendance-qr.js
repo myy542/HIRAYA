@@ -144,21 +144,36 @@ import {
             const attendanceRef = collection(db, 'teacherAttendance');
             const q = query(
                 attendanceRef,
-                where('teacherId', '==', userId),
-                where('date', '==', today),
-                orderBy('createdAt', 'desc'),
-                limit(1)
+                where('teacherId', '==', userId)
             );
             const snapshot = await getDocs(q);
             
             if (!snapshot.empty) {
-                const doc = snapshot.docs[0];
-                currentAttendance = { id: doc.id, ...doc.data() };
-                console.log('📋 Attendance loaded:', currentAttendance);
-                updateAttendanceUI();
+                let records = [];
+                snapshot.forEach(d => {
+                    const data = d.data();
+                    if (data.date === today) {
+                        records.push({ id: d.id, ...data });
+                    }
+                });
+
+                records.sort((a, b) => {
+                    const timeA = a.createdAt?.toDate ? a.createdAt.toDate().getTime() : (a.createdAt?.seconds ? a.createdAt.seconds * 1000 : (new Date(a.createdAt || 0).getTime() || 0));
+                    const timeB = b.createdAt?.toDate ? b.createdAt.toDate().getTime() : (b.createdAt?.seconds ? b.createdAt.seconds * 1000 : (new Date(b.createdAt || 0).getTime() || 0));
+                    return timeB - timeA;
+                });
+
+                if (records.length > 0) {
+                    currentAttendance = records[0];
+                    console.log('📋 Attendance loaded:', currentAttendance);
+                    updateAttendanceUI();
+                } else {
+                    currentAttendance = null;
+                    resetAttendanceUI();
+                }
             } else {
                 currentAttendance = null;
-                updateAttendanceUI();
+                resetAttendanceUI();
             }
         } catch (error) {
             console.error('Error loading attendance data:', error);

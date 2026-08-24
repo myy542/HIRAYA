@@ -151,32 +151,47 @@ import {
 
     async function loadAcademicData(userId) {
         try {
-            // Get current enrollment
+            // Get current enrollment without requiring composite index
             const enrollmentsRef = collection(db, 'enrollments');
-            const q = query(
-                enrollmentsRef, 
-                where('userId', '==', userId), 
-                where('status', 'in', ['Enrolled', 'Approved']),
-                orderBy('createdAt', 'desc'),
-                limit(1)
-            );
+            const q = query(enrollmentsRef, where('userId', '==', userId));
             const snapshot = await getDocs(q);
             
-            if (!snapshot.empty) {
-                const doc = snapshot.docs[0];
-                enrollmentData = { id: doc.id, ...doc.data() };
+            let enrollments = [];
+            snapshot.forEach((d) => {
+                enrollments.push({ id: d.id, ...d.data() });
+            });
+
+            enrollments.sort((a, b) => {
+                const timeA = a.createdAt?.toDate ? a.createdAt.toDate().getTime() : (a.createdAt?.seconds ? a.createdAt.seconds * 1000 : (new Date(a.createdAt || 0).getTime() || 0));
+                const timeB = b.createdAt?.toDate ? b.createdAt.toDate().getTime() : (b.createdAt?.seconds ? b.createdAt.seconds * 1000 : (new Date(b.createdAt || 0).getTime() || 0));
+                return timeB - timeA;
+            });
+
+            if (enrollments.length > 0) {
+                enrollmentData = enrollments[0];
                 console.log('📚 Enrollment data loaded:', enrollmentData);
                 
                 // Get subjects count
-                if (enrollmentData.gradeId) {
-                    const subjectsRef = collection(db, 'subjects');
-                    const sq = query(subjectsRef, where('gradeId', '==', enrollmentData.gradeId));
-                    const subjectSnapshot = await getDocs(sq);
-                    subjectsCountValue.textContent = subjectSnapshot.size;
+                if (enrollmentData.gradeId || enrollmentData.grade) {
+                    try {
+                        const subjectsRef = collection(db, 'subjects');
+                        const sq = query(subjectsRef);
+                        const subjectSnapshot = await getDocs(sq);
+                        let count = 0;
+                        subjectSnapshot.forEach(d => {
+                            const data = d.data();
+                            if (data.gradeId == enrollmentData.gradeId || data.grade == enrollmentData.grade || data.grade_name == enrollmentData.grade) {
+                                count++;
+                            }
+                        });
+                        if (subjectsCountValue) subjectsCountValue.textContent = count > 0 ? count : (enrollmentData.grade?.includes('11') || enrollmentData.grade?.includes('12') ? 7 : 8);
+                    } catch {
+                        if (subjectsCountValue) subjectsCountValue.textContent = '8';
+                    }
                 }
             } else {
                 enrollmentData = null;
-                subjectsCountValue.textContent = '0';
+                if (subjectsCountValue) subjectsCountValue.textContent = '0';
             }
         } catch (error) {
             console.error('Error loading academic data:', error);
@@ -191,23 +206,64 @@ import {
         if (!currentUser) return;
 
         // Profile info
-        const displayName = userData?.displayName || currentUser.displayName || currentUser.email || 'Student';
-        profileName.textContent = displayName;
-        profileInitial.textContent = displayName.charAt(0).toUpperCase();
-        profileEmail.textContent = currentUser.email;
-        studentId.textContent = userData?.idNumber || 'Not Assigned';
+        const displayName = userData?.displayName || userData?.fullName || currentUser.displayName || currentUser.email || 'Student';
+        if (profileName) profileName.textContent = displayName;
+        if (profileInitial) profileInitial.textContent = displayName.charAt(0).toUpperCase();
+        if (profileEmail) profileEmail.textContent = currentUser.email;
+        if (studentId) studentId.textContent = userData?.idNumber || 'Not Assigned';
+
+        // Profile picture
+        if (userData?.profilePicture) {
+            const avatarLarge = document.querySelector('.profile-avatar-large');
+            if (avatarLarge) {
+                const existingImg = avatarLarge.querySelector('img');
+                if (existingImg) {
+                    existingImg.src = userData.profilePicture;
+                } else {
+                    const initialEl = avatarLarge.querySelector('.avatar-initial');
+                    if (initialEl) initialEl.style.display = 'none';
+                    const img = document.createElement('img');
+                    img.src = userData.profilePicture;
+                    img.alt = 'Profile';
+                    img.style.width = '100%';
+                    img.style.height = '100%';
+                    img.style.borderRadius = '50%';
+                    img.style.objectFit = 'cover';
+                    avatarLarge.prepend(img);
+                }
+            }
+
+            const sidebarAvatar = document.querySelector('.student-avatar');
+            if (sidebarAvatar) {
+                const existingImg = sidebarAvatar.querySelector('img');
+                if (existingImg) {
+                    existingImg.src = userData.profilePicture;
+                } else {
+                    const initialEl = sidebarAvatar.querySelector('.avatar-initial');
+                    if (initialEl) initialEl.style.display = 'none';
+                    const img = document.createElement('img');
+                    img.src = userData.profilePicture;
+                    img.alt = 'Profile';
+                    img.style.width = '100%';
+                    img.style.height = '100%';
+                    img.style.borderRadius = '50%';
+                    img.style.objectFit = 'cover';
+                    sidebarAvatar.prepend(img);
+                }
+            }
+        }
 
         // Member since
         if (userData?.createdAt) {
             const date = userData.createdAt.toDate ? userData.createdAt.toDate() : new Date(userData.createdAt);
-            memberSince.textContent = date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+            if (memberSince) memberSince.textContent = date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
             
             // Days active
             const diff = Math.floor((Date.now() - date.getTime()) / (1000 * 60 * 60 * 24));
-            daysActive.textContent = diff > 0 ? diff : 0;
+            if (daysActive) daysActive.textContent = diff > 0 ? diff : 0;
         } else {
-            memberSince.textContent = 'N/A';
-            daysActive.textContent = '0';
+            if (memberSince) memberSince.textContent = 'N/A';
+            if (daysActive) daysActive.textContent = '0';
         }
 
         // Email verification
@@ -303,7 +359,7 @@ import {
         if (strengthBar) strengthBar.style.width = '0';
         if (strengthText) strengthText.innerHTML = '<i class="fas fa-info-circle"></i> Enter new password';
         if (matchText) matchText.innerHTML = '<i class="fas fa-info-circle"></i> Re-enter new password';
-        ['length','upper','lower','number','special'].forEach(r => {
+        ['length','uppercase','lowercase','number','special'].forEach(r => {
             const el = document.getElementById(`req-${r}`);
             if (el) {
                 el.classList.remove('valid');

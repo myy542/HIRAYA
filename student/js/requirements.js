@@ -115,79 +115,123 @@ import {
 
     async function loadRequirementsData(userId) {
         try {
-            // Get current enrollment
+            // Get current enrollment without requiring composite index
             const enrollmentsRef = collection(db, 'enrollments');
-            const q = query(
-                enrollmentsRef, 
-                where('userId', '==', userId), 
-                orderBy('createdAt', 'desc'),
-                limit(1)
-            );
+            const q = query(enrollmentsRef, where('userId', '==', userId));
             const snapshot = await getDocs(q);
             
             if (snapshot.empty) {
                 // No enrollment found
-                document.getElementById('noEnrollmentCard').style.display = 'block';
-                document.getElementById('requirementsContent').style.display = 'none';
+                const noEnrollCard = document.getElementById('noEnrollmentCard');
+                const reqContent = document.getElementById('requirementsContent');
+                if (noEnrollCard) noEnrollCard.style.display = 'block';
+                if (reqContent) reqContent.style.display = 'none';
                 return;
             }
 
-            const doc = snapshot.docs[0];
-            currentEnrollment = { id: doc.id, ...doc.data() };
+            let enrollments = [];
+            snapshot.forEach((doc) => {
+                enrollments.push({ id: doc.id, ...doc.data() });
+            });
+
+            // Sort in memory by createdAt descending
+            enrollments.sort((a, b) => {
+                const timeA = a.createdAt?.toDate ? a.createdAt.toDate().getTime() : (a.createdAt?.seconds ? a.createdAt.seconds * 1000 : (new Date(a.createdAt || 0).getTime() || 0));
+                const timeB = b.createdAt?.toDate ? b.createdAt.toDate().getTime() : (b.createdAt?.seconds ? b.createdAt.seconds * 1000 : (new Date(b.createdAt || 0).getTime() || 0));
+                return timeB - timeA;
+            });
+
+            currentEnrollment = enrollments[0];
             console.log('📚 Enrollment data loaded:', currentEnrollment);
 
+            // Update Info Card elements
+            const gradeEl = document.getElementById('enrollmentGrade');
+            if (gradeEl) gradeEl.textContent = currentEnrollment.grade || 'Grade N/A';
+
+            const typeBadge = document.getElementById('studentTypeBadge');
+            if (typeBadge) {
+                const isNew = (currentEnrollment.studentType || 'new') === 'new' || enrollments.length <= 1;
+                typeBadge.textContent = isNew ? 'New Student' : 'Continuing Student';
+                typeBadge.className = 'student-type-badge ' + (isNew ? 'student-type-new' : 'student-type-continuing');
+            }
+
+            const statusBadge = document.getElementById('enrollmentStatusBadge');
+            if (statusBadge) {
+                const st = (currentEnrollment.status || 'Pending').toLowerCase();
+                statusBadge.textContent = currentEnrollment.status || 'Pending';
+                statusBadge.className = 'status-badge status-' + (st === 'approved' || st === 'enrolled' ? 'enrolled' : st);
+            }
+
+            const appBadge = document.getElementById('approvedBadge');
+            if (appBadge) {
+                const isApp = ['enrolled', 'approved'].includes((currentEnrollment.status || '').toLowerCase());
+                appBadge.style.display = isApp ? 'inline-flex' : 'none';
+            }
+
             // Get requirements based on grade and student type
-            const requirementsRef = collection(db, 'enrollmentRequirements');
-            const rq = query(
-                requirementsRef,
-                where('gradeLevel', '==', currentEnrollment.grade || currentEnrollment.gradeName),
-                where('studentType', '==', currentEnrollment.studentType || 'new')
-            );
-            const reqSnapshot = await getDocs(rq);
-            
-            requirementFields = [];
-            requirementsData = [];
-            
-            reqSnapshot.forEach((reqDoc) => {
-                const data = reqDoc.data();
-                const key = data.fieldName || data.requirementName?.toLowerCase().replace(/[^a-zA-Z0-9]/g, '_') || 'req_' + reqDoc.id;
+            try {
+                const requirementsRef = collection(db, 'enrollmentRequirements');
+                const reqSnapshot = await getDocs(requirementsRef);
                 
-                // Check if already submitted
-                const isSubmitted = currentEnrollment[key] && currentEnrollment[key] !== '';
+                requirementFields = [];
+                requirementsData = [];
                 
-                const requirement = {
-                    key: key,
-                    label: data.requirementName || data.label || 'Requirement',
-                    icon: data.icon || 'fa-file-alt',
-                    submitted: isSubmitted,
-                    required: data.isRequired || false,
-                    canBeFollowed: data.canBeFollowed || false,
-                    description: data.description || 'Please submit this document',
-                    file: isSubmitted ? currentEnrollment[key] : null,
-                    allowedTypes: data.allowedTypes || 'pdf,jpg,jpeg,png',
-                    maxSize: data.maxSize || 5
-                };
-                
-                requirementsData.push(requirement);
-                requirementFields.push({
-                    key: key,
-                    label: requirement.label,
-                    field: key
+                const targetGrade = currentEnrollment.grade || currentEnrollment.gradeName;
+                const targetType = currentEnrollment.studentType || 'new';
+
+                reqSnapshot.forEach((reqDoc) => {
+                    const data = reqDoc.data();
+                    if ((data.gradeLevel == targetGrade || !data.gradeLevel) && (data.studentType == targetType || !data.studentType)) {
+                        const key = data.fieldName || data.requirementName?.toLowerCase().replace(/[^a-zA-Z0-9]/g, '_') || 'req_' + reqDoc.id;
+                        const isSubmitted = currentEnrollment[key] && currentEnrollment[key] !== '';
+                        
+                        const requirement = {
+                            key: key,
+                            label: data.requirementName || data.label || 'Requirement',
+                            icon: data.icon || 'fa-file-alt',
+                            submitted: isSubmitted,
+                            required: data.isRequired || false,
+                            canBeFollowed: data.canBeFollowed || false,
+                            description: data.description || 'Please submit this document',
+                            file: isSubmitted ? currentEnrollment[key] : null,
+                            allowedTypes: data.allowedTypes || 'pdf,jpg,jpeg,png',
+                            maxSize: data.maxSize || 5
+                        };
+                        
+                        requirementsData.push(requirement);
+                        requirementFields.push({
+                            key: key,
+                            label: requirement.label,
+                            field: key
+                        });
+                    }
                 });
-            });
+            } catch (e) {
+                console.log('Error fetching requirements from DB, using defaults:', e);
+            }
 
             // If no requirements found, use default ones
             if (requirementsData.length === 0) {
                 requirementsData = getDefaultRequirements(currentEnrollment);
             }
 
+            // Check if submitted fields exist in currentEnrollment for default requirements
+            requirementsData.forEach(req => {
+                if (currentEnrollment[req.key] || currentEnrollment[req.key + '_filename']) {
+                    req.submitted = true;
+                    req.file = currentEnrollment[req.key] || null;
+                }
+            });
+
             // Update UI
             updateRequirementsUI();
             updateProgressUI();
             updateStatusAlert();
 
-            document.getElementById('noEnrollmentCard').style.display = 'none';
-            document.getElementById('requirementsContent').style.display = 'block';
+            const noEnrollCard = document.getElementById('noEnrollmentCard');
+            const reqContent = document.getElementById('requirementsContent');
+            if (noEnrollCard) noEnrollCard.style.display = 'none';
+            if (reqContent) reqContent.style.display = 'block';
 
         } catch (error) {
             console.error('Error loading requirements data:', error);
@@ -306,7 +350,7 @@ import {
     }
 
     function updateStatusAlert() {
-        if (!statusAlert || !statusMessage) return;
+        if (!statusAlert) return;
 
         const status = currentEnrollment?.status || 'Pending_Requirements';
         const grade = currentEnrollment?.grade || 'N/A';

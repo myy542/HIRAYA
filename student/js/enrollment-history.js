@@ -109,7 +109,7 @@ import {
     async function loadEnrollmentHistory(userId) {
         try {
             const enrollmentsRef = collection(db, 'enrollments');
-            const q = query(enrollmentsRef, where('userId', '==', userId), orderBy('createdAt', 'desc'));
+            const q = query(enrollmentsRef, where('userId', '==', userId));
             const snapshot = await getDocs(q);
             
             let enrollments = [];
@@ -129,6 +129,9 @@ import {
                     createdAt: createdAt || new Date()
                 });
             });
+
+            // Sort by createdAt descending
+            enrollments.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
             if (enrollments.length > 0) {
                 renderEnrollmentHistory(enrollments);

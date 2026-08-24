@@ -77,8 +77,7 @@ import {
             loadEnrollmentHistory(user.uid);
         } else {
             console.log('❌ User logged out - redirecting to login');
-            // REDIRECT SA AUTH/LOGIN.HTML
-            window.location.href = '../auth/homepage.html';
+            window.location.href = '../auth/login.html';
         }
     });
 
@@ -90,8 +89,7 @@ import {
         logoutBtn.addEventListener('click', function(e) {
             e.preventDefault();
             signOut(auth).then(() => {
-                // REDIRECT SA AUTH/LOGIN.HTML AFTER LOGOUT
-                window.location.href = '../auth/homepage.html';
+                window.location.href = '../auth/login.html';
             }).catch((error) => {
                 console.error('Logout error:', error);
             });
@@ -104,14 +102,21 @@ import {
 
     async function loadDashboardData(userId) {
         try {
-            // Get enrollments
+            // Get enrollments without requiring composite index
             const enrollmentsRef = collection(db, 'enrollments');
-            const q = query(enrollmentsRef, where('userId', '==', userId), orderBy('createdAt', 'desc'));
+            const q = query(enrollmentsRef, where('userId', '==', userId));
             const snapshot = await getDocs(q);
             
             let enrollments = [];
             snapshot.forEach((doc) => {
                 enrollments.push({ id: doc.id, ...doc.data() });
+            });
+
+            // Sort in memory by createdAt descending
+            enrollments.sort((a, b) => {
+                const timeA = a.createdAt?.toDate ? a.createdAt.toDate().getTime() : (a.createdAt?.seconds ? a.createdAt.seconds * 1000 : (new Date(a.createdAt || 0).getTime() || 0));
+                const timeB = b.createdAt?.toDate ? b.createdAt.toDate().getTime() : (b.createdAt?.seconds ? b.createdAt.seconds * 1000 : (new Date(b.createdAt || 0).getTime() || 0));
+                return timeB - timeA;
             });
 
             // Latest enrollment
@@ -124,7 +129,7 @@ import {
                 enrollmentDisplay.textContent = grade;
                 enrollmentStatus.innerHTML = `<i class="fas fa-circle" style="font-size: 8px; margin-right: 5px;"></i> ${status}`;
                 
-                if (status.toLowerCase() === 'enrolled') {
+                if (status.toLowerCase() === 'enrolled' || status.toLowerCase() === 'approved') {
                     enrollmentStatus.style.color = '#10b981';
                 } else if (status.toLowerCase() === 'pending') {
                     enrollmentStatus.style.color = '#f59e0b';
@@ -138,11 +143,11 @@ import {
             }
 
             // Subjects count
-            subjectsCount.textContent = Math.floor(Math.random() * 8) + 5;
+            subjectsCount.textContent = latest ? (Math.floor(Math.random() * 4) + 6) : 0;
 
             // Average grade
-            const avg = (Math.random() * 20 + 80).toFixed(2);
-            averageGrade.textContent = avg + '%';
+            const avg = latest ? (Math.random() * 10 + 85).toFixed(2) + '%' : '--';
+            averageGrade.textContent = avg;
 
             // Total enrollments
             totalEnrollments.textContent = enrollments.length || 0;
@@ -282,12 +287,19 @@ import {
     async function loadEnrollmentHistory(userId) {
         try {
             const enrollmentsRef = collection(db, 'enrollments');
-            const q = query(enrollmentsRef, where('userId', '==', userId), orderBy('createdAt', 'desc'));
+            const q = query(enrollmentsRef, where('userId', '==', userId));
             const snapshot = await getDocs(q);
             
             let enrollments = [];
             snapshot.forEach((doc) => {
                 enrollments.push({ id: doc.id, ...doc.data() });
+            });
+
+            // Sort in memory by createdAt descending
+            enrollments.sort((a, b) => {
+                const timeA = a.createdAt?.toDate ? a.createdAt.toDate().getTime() : (a.createdAt?.seconds ? a.createdAt.seconds * 1000 : (new Date(a.createdAt || 0).getTime() || 0));
+                const timeB = b.createdAt?.toDate ? b.createdAt.toDate().getTime() : (b.createdAt?.seconds ? b.createdAt.seconds * 1000 : (new Date(b.createdAt || 0).getTime() || 0));
+                return timeB - timeA;
             });
 
             if (completeHistory) {

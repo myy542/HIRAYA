@@ -170,18 +170,18 @@ import {
     async function loadEnrollmentData(studentId) {
         try {
             const enrollmentsRef = collection(db, 'enrollments');
-            const q = query(
-                enrollmentsRef,
-                where('userId', '==', studentId),
-                where('status', '==', 'Enrolled'),
-                orderBy('createdAt', 'desc'),
-                limit(1)
-            );
+            const q = query(enrollmentsRef, where('userId', '==', studentId));
             const snapshot = await getDocs(q);
 
             if (!snapshot.empty) {
-                const doc = snapshot.docs[0];
-                enrollmentData = { id: doc.id, ...doc.data() };
+                let enrollments = [];
+                snapshot.forEach(d => enrollments.push({ id: d.id, ...d.data() }));
+                enrollments.sort((a, b) => {
+                    const timeA = a.createdAt?.toDate ? a.createdAt.toDate().getTime() : (a.createdAt?.seconds ? a.createdAt.seconds * 1000 : (new Date(a.createdAt || 0).getTime() || 0));
+                    const timeB = b.createdAt?.toDate ? b.createdAt.toDate().getTime() : (b.createdAt?.seconds ? b.createdAt.seconds * 1000 : (new Date(b.createdAt || 0).getTime() || 0));
+                    return timeB - timeA;
+                });
+                enrollmentData = enrollments[0];
                 console.log('📋 Enrollment data loaded:', enrollmentData);
                 renderEnrollmentInfo();
             } else {
@@ -204,18 +204,18 @@ import {
 
     function setupEnrollmentListener(studentId) {
         const enrollmentsRef = collection(db, 'enrollments');
-        const q = query(
-            enrollmentsRef,
-            where('userId', '==', studentId),
-            where('status', '==', 'Enrolled'),
-            orderBy('createdAt', 'desc'),
-            limit(1)
-        );
+        const q = query(enrollmentsRef, where('userId', '==', studentId));
 
         onSnapshot(q, (snapshot) => {
             if (!snapshot.empty) {
-                const doc = snapshot.docs[0];
-                enrollmentData = { id: doc.id, ...doc.data() };
+                let enrollments = [];
+                snapshot.forEach(d => enrollments.push({ id: d.id, ...d.data() }));
+                enrollments.sort((a, b) => {
+                    const timeA = a.createdAt?.toDate ? a.createdAt.toDate().getTime() : (a.createdAt?.seconds ? a.createdAt.seconds * 1000 : (new Date(a.createdAt || 0).getTime() || 0));
+                    const timeB = b.createdAt?.toDate ? b.createdAt.toDate().getTime() : (b.createdAt?.seconds ? b.createdAt.seconds * 1000 : (new Date(b.createdAt || 0).getTime() || 0));
+                    return timeB - timeA;
+                });
+                enrollmentData = enrollments[0];
                 renderEnrollmentInfo();
             }
         }, (error) => {
